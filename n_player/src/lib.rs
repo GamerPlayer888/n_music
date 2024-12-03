@@ -321,7 +321,7 @@ impl From<FileTrack> for TrackData {
         Self {
             artist: value.artist.into(),
             cover: if !value.image.is_empty() {
-                slint::Image::from_rgb8(SharedPixelBuffer::clone_from_slice(&value.image, 128, 128))
+                slint::Image::from_rgba8(SharedPixelBuffer::clone_from_slice(&value.image, 128, 128))
             } else {
                 Default::default()
             },
