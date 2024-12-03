@@ -56,17 +56,20 @@ pub trait Platform {
     async fn add_runner(&mut self, runner: Arc<RwLock<Runner>>, tx: Sender<RunnerMessage>)
     where
         Self: Sized,
-    {}
+    {
+    }
     /// Notify the platform that some playback properties have changed and update those accordingly
-    async fn properties_changed<P: IntoIterator<Item=Property> + Send>(&self, properties: P)
+    async fn properties_changed<P: IntoIterator<Item = Property> + Send>(&self, properties: P)
     where
         Self: Sized,
-    {}
+    {
+    }
     /// Allows the platform to do operations once in a while
     async fn tick(&mut self)
     where
         Self: Sized,
-    {}
+    {
+    }
 }
 
 #[cfg(target_os = "linux")]
@@ -105,11 +108,11 @@ impl Platform for LinuxPlatform {
             "n_music",
             crate::bus_server::linux::MPRISBridge::new(runner, tx.clone()),
         )
-            .await
-            .unwrap();
+        .await
+        .unwrap();
         self.server = Some(server);
     }
-    async fn properties_changed<P: IntoIterator<Item=Property> + Send>(&self, properties: P) {
+    async fn properties_changed<P: IntoIterator<Item = Property> + Send>(&self, properties: P) {
         if let Some(server) = &self.server {
             let mut new_properties = vec![];
             for p in properties {
@@ -178,7 +181,7 @@ pub struct AndroidPlatform {
     app: slint::android::AndroidApp,
     jvm: jni::JavaVM,
     callback: jni::objects::GlobalRef,
-    tx: Option<Sender<RunnerMessage>>
+    tx: Option<Sender<RunnerMessage>>,
 }
 
 #[cfg(target_os = "android")]
@@ -187,9 +190,8 @@ impl AndroidPlatform {
         app: slint::android::AndroidApp,
         jvm: jni::JavaVM,
         callback: jni::objects::GlobalRef,
-        tx: Option<Sender<RunnerMessage>>
     ) -> Self {
-        Self { app, jvm, callback, tx }
+        Self { app, jvm, callback, tx: None }
     }
 }
 
@@ -251,11 +253,12 @@ impl Platform for AndroidPlatform {
 
     async fn add_runner(&mut self, runner: Arc<RwLock<Runner>>, tx: Sender<RunnerMessage>) {
         let mut env = self.jvm.attach_current_thread().unwrap();
-        env.call_method(&self.callback, "createNotification", "()V", &[]).unwrap();
+        env.call_method(&self.callback, "createNotification", "()V", &[])
+            .unwrap();
         self.tx = Some(tx);
     }
 
-    async fn tick(&mut self){
+    async fn tick(&mut self) {
         while let Ok(message) = crate::ANDROID_TX.try_recv() {
             if let crate::MessageAndroidToRust::Receiver(msg, seek) = message {
                 let tx = self.tx.clone().unwrap();
