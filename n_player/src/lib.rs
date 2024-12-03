@@ -1,4 +1,4 @@
-use crate::runner::Runner;
+use crate::runner::{Runner, RunnerMessage, RunnerSeek};
 use bitcode::{Decode, Encode};
 #[cfg(target_os = "android")]
 use flume::{Receiver, RecvError, SendError, Sender, TryRecvError};
@@ -76,7 +76,7 @@ pub static ANDROID_TX: Lazy<SenderReceiver<MessageAndroidToRust>> =
 
 #[cfg(target_os = "android")]
 pub enum MessageAndroidToRust {
-    Receiver(String, f64),
+    Callback(RunnerMessage),
     Directory(String),
     File(String),
     Start(jni::JavaVM, jni::objects::GlobalRef),
@@ -134,7 +134,7 @@ pub async fn get_image_squared<P: AsRef<Path> + Debug + Send + 'static>(
                 };
 
             if let Some(mut zune_image) = zune_image {
-                zune_image.convert_color(ColorSpace::RGBA).unwrap();
+                zune_image.convert_color(ColorSpace::RGB).unwrap();
                 let (w, h) = zune_image.dimensions();
                 let mut size = w;
                 if w != h {
@@ -321,7 +321,7 @@ impl From<FileTrack> for TrackData {
         Self {
             artist: value.artist.into(),
             cover: if !value.image.is_empty() {
-                slint::Image::from_rgba8(SharedPixelBuffer::clone_from_slice(&value.image, 128, 128))
+                slint::Image::from_rgb8(SharedPixelBuffer::clone_from_slice(&value.image, 128, 128))
             } else {
                 Default::default()
             },
@@ -389,20 +389,34 @@ pub extern "system" fn Java_com_enn3developer_n_1music_MainActivity_start<'local
 
 #[cfg(target_os = "android")]
 #[no_mangle]
-pub extern "system" fn Java_com_enn3developer_n_1music_MainActivity_receiverNotification<'local>(
-    mut env: jni::JNIEnv<'local>,
+pub extern "system" fn Java_com_enn3developer_n_1music_MediaCallback_TogglePause<'local>(
     _class: jni::objects::JClass<'local>,
-    string: jni::objects::JString<'local>,
-    seek: jni::sys::jdouble
 ) {
-    ANDROID_TX
-        .send(MessageAndroidToRust::Receiver(
-            env.get_string(&string)
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string(),
-            seek.into()
-        ))
-        .unwrap()
+    ANDROID_TX.send(MessageAndroidToRust::Callback(RunnerMessage::TogglePause)).unwrap()
+}
+
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub extern "system" fn Java_com_enn3developer_n_1music_MediaCallback_PlayNext<'local>(
+    _class: jni::objects::JClass<'local>,
+) {
+    ANDROID_TX.send(MessageAndroidToRust::Callback(RunnerMessage::PlayNext)).unwrap()
+}
+
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub extern "system" fn Java_com_enn3developer_n_1music_MediaCallback_PlayPrevious<'local>(
+    _class: jni::objects::JClass<'local>,
+) {
+    ANDROID_TX.send(MessageAndroidToRust::Callback(RunnerMessage::PlayPrevious)).unwrap()
+}
+
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub extern "system" fn Java_com_enn3developer_n_1music_MediaCallback_Seek<'local>(
+    _class: jni::objects::JClass<'local>,
+    seek: jni::sys::jdouble,
+) {
+    ANDROID_TX.send(MessageAndroidToRust::Callback(RunnerMessage::Seek(RunnerSeek::Absolute(seek)))).unwrap();
+    ANDROID_TX.send(MessageAndroidToRust::Callback(RunnerMessage::Play)).unwrap()
 }
