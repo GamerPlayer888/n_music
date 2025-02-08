@@ -229,6 +229,8 @@ async fn setup_data<P: crate::platform::Platform + Send + 'static>(
     let t = tx.clone();
     app_data.on_play_next(move || t.send(RunnerMessage::PlayNext).unwrap());
     let t = tx.clone();
+    app_data.on_toggle_repeat(move || t.send(RunnerMessage::ToggleRepeat).unwrap());
+    let t = tx.clone();
     app_data.on_seek(move |time| {
         t.send(RunnerMessage::Seek(RunnerSeek::Absolute(time as f64)))
             .unwrap()
@@ -268,6 +270,7 @@ async fn updater_task<P: crate::platform::Platform + Send + 'static>(
             index = 0;
         }
         let playback = guard.playback();
+        let repeat = guard.repeat();
         let time = guard.time();
         let length = time.length;
         let time_float = time.position;
@@ -340,6 +343,7 @@ async fn updater_task<P: crate::platform::Platform + Send + 'static>(
                 }
                 app_data.set_length(length as f32);
                 app_data.set_playback(playback);
+                app_data.set_repeat(repeat);
                 app_data.set_volume(volume as f32);
 
                 if new_loaded {

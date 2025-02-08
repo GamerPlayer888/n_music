@@ -1,4 +1,4 @@
-import {TrackData} from "./../data/track_data.slint";
+import { TrackData } from "./../data/track_data.slint";
 import { Slider, Button } from "std-widgets.slint";
 import { AppData } from "../globals/app_data.slint";
 
@@ -81,7 +81,7 @@ export component ControlPanel {
                 buttons := HorizontalLayout {
                     alignment: end;
                     spacing: 10px;
-                    width: previous.width + toggle-pause.width + next.width + self.spacing * 2;
+                    width: previous.width + toggle-pause.width + next.width + repeat.width + self.spacing * 3; // n - 1 buttons
                     previous := Button {
                         icon: @image-url("../../assets/icons/previous.svg");
                         colorize-icon: true;
@@ -107,6 +107,15 @@ export component ControlPanel {
                         width: 64px;
                         clicked => {
                             AppData.play_next()
+                        }
+                    }
+
+                    repeat := Button {
+                        icon: AppData.repeat ? @image-url("../../assets/icons/repeat_on.svg") : @image-url("../../assets/icons/repeat_off.svg");
+                        colorize-icon: true;
+                        width: 64px;
+                        clicked => {
+                            AppData.toggle_repeat()
                         }
                     }
                 }

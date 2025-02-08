@@ -2,7 +2,7 @@ use crate::music_track::MusicTrack;
 use crate::player::Player;
 use crate::{remove_ext, strip_absolute_path};
 use rand::prelude::SliceRandom;
-use rand::rng;
+use rand::thread_rng;
 use std::cmp::PartialEq;
 use std::io;
 use std::io::ErrorKind;
@@ -10,7 +10,7 @@ use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::sync::Arc;
 
-#[derive(Default, Eq, PartialEq, Debug, Clone)]
+#[derive(Default, Eq, PartialEq, Debug)]
 pub enum LoopStatus {
     #[default]
     Playlist,
@@ -68,8 +68,11 @@ impl QueuePlayer {
         self.loop_status = loop_status;
     }
 
-    pub fn loop_status(&self) -> LoopStatus {
-        self.loop_status.clone()
+    pub fn get_loop_status(&self) -> bool {
+        match self.loop_status {
+            LoopStatus::Playlist => { false }
+            LoopStatus::File => { true }
+        }
     }
 
     pub async fn get_path_for_file(&self, i: usize) -> Option<PathBuf> {
@@ -113,7 +116,7 @@ impl QueuePlayer {
 
     #[inline]
     pub fn shuffle(&mut self) {
-        self.queue.shuffle(&mut rng());
+        self.queue.shuffle(&mut thread_rng());
     }
 
     pub async fn current_track_name(&self) -> Option<Arc<str>> {

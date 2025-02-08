@@ -4,6 +4,7 @@ export global AppData {
     in property <[TrackData]> tracks;
     in property <int> playing;
     in property <bool> playback;
+    in property <bool> repeat;
     in property <string> position_time;
     in property <float> time;
     in property <float> length;
@@ -24,6 +25,7 @@ export global AppData {
     callback searching(string);
     callback open_link(string);
     callback changing();
+    callback toggle_repeat();
     public function scroll() {
         // height is negative
         viewport-y = min((playing - 1) * -84px - 50px, 0px);
