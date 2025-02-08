@@ -33,6 +33,7 @@ pub enum RunnerMessage {
     SetVolume(f64),
     PlayTrack(usize),
     Seek(RunnerSeek),
+    ToggleRepeat,
 }
 
 #[derive(Debug)]
@@ -125,12 +126,23 @@ impl Runner {
                 if let Err(e) = self.player.seek_to(seek.trunc() as u64, seek.fract()).await {
                     eprintln!("error happened while asking to seek: {e}");
                 }
+            },
+            RunnerMessage::ToggleRepeat => {
+                if !self.player.get_loop_status() {
+                    self.player.set_loop_status(LoopStatus::File);
+                } else {
+                    self.player.set_loop_status(LoopStatus::Playlist);
+                }
             }
         }
     }
 
     pub fn playback(&self) -> bool {
         !self.player.is_paused() && self.player.is_playing()
+    }
+
+    pub fn repeat(&self) -> bool {
+        self.player.get_loop_status()
     }
 
     pub fn volume(&self) -> f64 {

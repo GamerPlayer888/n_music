@@ -68,6 +68,13 @@ impl QueuePlayer {
         self.loop_status = loop_status;
     }
 
+    pub fn get_loop_status(&self) -> bool {
+        match self.loop_status {
+            LoopStatus::Playlist => { false }
+            LoopStatus::File => { true }
+        }
+    }
+
     pub async fn get_path_for_file(&self, i: usize) -> Option<PathBuf> {
         Some(PathBuf::from(&self.path).join(self.queue.get(i)?.as_ref()))
     }
