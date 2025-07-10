@@ -10,7 +10,8 @@ ci = "github"
 # The installers to generate for each app
 installers = ["shell", "msi"]
 # Target platforms to build apps for (Rust target-triple syntax)
-targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
+# ADDED aarch64-linux-android to the list of targets
+targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc", "aarch64-linux-android"]
 # Path that installers should place binaries in
 install-path = "~/.n_music/bin"
 # Custom display name to use for this app in release bodies
@@ -23,6 +24,8 @@ install-updater = false
 global = "ubuntu-latest"
 x86_64-unknown-linux-gnu = "ubuntu-latest"
 x86_64-pc-windows-msvc = "windows-latest"
+# ADDED a runner for the new Android target
+aarch64-linux-android = "ubuntu-latest"
 
 # Install dependencies needed to build for Linux
 [dist.dependencies.apt]
@@ -33,3 +36,29 @@ libfreetype-dev = "*"
 
 [dist.bin-aliases]
 mybin = ["n_music"]
+
+# ADDED custom artifact definition for the Android library
+[[dist.artifacts]]
+# A unique ID for this artifact
+id = "android-library"
+
+# The target triple this artifact is for
+target = "aarch64-linux-android"
+
+# The command to run to build the artifact.
+# This should be your script.
+build-command = ["./compile_rust_release.sh"]
+
+# The assets to be included in the release from this build
+assets = [
+    { path = "android/src/main/jniLibs/arm64-v8a/libn_player.so", name = "libn_player-{{ tag }}-arm64-v8a.so" },
+]
+
+# Custom GitHub Actions steps to run before the build-command.
+# This is where we set up the Java and Android environment.
+github-pre-build-steps = [
+    { name = "Set up Java for Android build", uses = "actions/setup-java@v4", with = { distribution = "temurin", "java-version" = "17" } },
+    { name = "Set up Android SDK/NDK", uses = "android-actions/setup-android@v3" },
+    { name = "Install cargo-ndk", run = "cargo install cargo-ndk" },
+    { name = "Make build script executable", run = "chmod +x ./compile_rust_release.sh" },
+]
