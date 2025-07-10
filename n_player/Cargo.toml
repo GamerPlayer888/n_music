@@ -12,9 +12,6 @@ path-guid = "D9DF9822-756A-4015-85DD-99173166A5DC"
 license = false
 eula = false
 
-[package.metadata.dist]
-allow-dirty = true
-
 [package.metadata.dist.artifacts]
 id = "android-library"
 kind = "executable"
