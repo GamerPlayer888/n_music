@@ -1,3 +1,4 @@
+export CC=gcc
 export ANDROID_HOME=$HOME/Android/Sdk;
 export NDK_VERSION=$(ls $ANDROID_HOME/ndk | head -1);
 export ANDROID_NDK=$ANDROID_HOME/ndk/$NDK_VERSION;
