@@ -1,1 +1,1 @@
-cargo ndk -t arm64-v8a -o android/src/main/jniLibs/ -p 30 build --package n_player --lib --no-default-features --release
+cargo ndk -t arm64-v8a --platform 30 -o android/src/main/jniLibs/ build --package n_player --lib --no-default-features --release

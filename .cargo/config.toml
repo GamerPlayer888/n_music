@@ -4,4 +4,4 @@ rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]
 
 [target.aarch64-linux-android]
 linker = "clang"
-rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]
+rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/ld.lld"]
