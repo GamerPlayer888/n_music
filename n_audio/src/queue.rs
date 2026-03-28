@@ -2,7 +2,7 @@ use crate::music_track::MusicTrack;
 use crate::player::Player;
 use crate::{remove_ext, strip_absolute_path};
 use rand::prelude::SliceRandom;
-use rand::thread_rng;
+use rand::rngs::ThreadRng;
 use std::cmp::PartialEq;
 use std::io;
 use std::io::ErrorKind;
@@ -64,15 +64,12 @@ impl QueuePlayer {
         self.path = path;
     }
 
-    pub fn set_loop_status(&mut self, loop_status: LoopStatus) {
+    pub fn set_loop(&mut self, loop_status: LoopStatus) {
         self.loop_status = loop_status;
     }
 
-    pub fn get_loop_status(&self) -> bool {
-        match self.loop_status {
-            LoopStatus::Playlist => { false }
-            LoopStatus::File => { true }
-        }
+    pub fn is_looping(&self) -> bool {
+        self.loop_status == LoopStatus::File
     }
 
     pub async fn get_path_for_file(&self, i: usize) -> Option<PathBuf> {
@@ -116,7 +113,7 @@ impl QueuePlayer {
 
     #[inline]
     pub fn shuffle(&mut self) {
-        self.queue.shuffle(&mut thread_rng());
+        self.queue.shuffle(&mut ThreadRng::default());
     }
 
     pub async fn current_track_name(&self) -> Option<Arc<str>> {

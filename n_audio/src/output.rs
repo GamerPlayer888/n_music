@@ -104,7 +104,7 @@ impl<T: AudioOutputSample + cpal::SizedSample> CpalAudioOutputImpl<T> {
         // Output audio stream config.
         let config = cpal::StreamConfig {
             channels: num_channels as cpal::ChannelCount,
-            sample_rate: cpal::SampleRate(spec.rate),
+            sample_rate: spec.rate as cpal::SampleRate,
             buffer_size: cpal::BufferSize::Default,
         };
 
