@@ -79,7 +79,7 @@ pub enum MessageAndroidToRust {
     Callback(RunnerMessage),
     Directory(String),
     File(String),
-    Start(jni::JavaVM, jni::objects::GlobalRef),
+    Start(jni::JavaVM, jni::objects::Global<jni::objects::JObject<'static>>),
 }
 #[cfg(target_os = "android")]
 pub enum MessageRustToAndroid {
@@ -339,96 +339,127 @@ impl From<FileTrack> for TrackData {
 }
 
 #[cfg(target_os = "android")]
+use jni::errors::ThrowRuntimeExAndDefault;
+#[cfg(target_os = "android")]
 #[no_mangle]
 pub extern "system" fn Java_com_enn3developer_n_1music_MainActivity_gotDirectory<'local>(
-    mut env: jni::JNIEnv<'local>,
+    mut env: jni::EnvUnowned<'local>,
     _class: jni::objects::JClass<'local>,
     string: jni::objects::JString<'local>,
 ) {
-    ANDROID_TX
-        .send(MessageAndroidToRust::Directory(
-            env.get_string(&string)
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string(),
-        ))
-        .unwrap()
+    env.with_env(|env| -> jni::errors::Result<()> {
+        let dir_path = string.try_to_string(env)?;
+        ANDROID_TX
+            .send(MessageAndroidToRust::Directory(dir_path))
+            .unwrap();
+        Ok(())
+    }).resolve::<ThrowRuntimeExAndDefault>();
 }
 #[cfg(target_os = "android")]
 #[no_mangle]
 pub extern "system" fn Java_com_enn3developer_n_1music_MainActivity_gotFile<'local>(
-    mut env: jni::JNIEnv<'local>,
+    mut env: jni::EnvUnowned<'local>,
     _class: jni::objects::JClass<'local>,
     string: jni::objects::JString<'local>,
 ) {
-    ANDROID_TX
-        .send(MessageAndroidToRust::File(
-            env.get_string(&string)
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string(),
-        ))
-        .unwrap()
+    env.with_env(|env| -> jni::errors::Result<()> {
+        let file_path = string.try_to_string(env)?;
+        ANDROID_TX
+            .send(MessageAndroidToRust::File(file_path))
+            .unwrap();
+        Ok(())
+    }).resolve::<ThrowRuntimeExAndDefault>();
 }
 
 #[cfg(target_os = "android")]
 #[no_mangle]
 pub extern "system" fn Java_com_enn3developer_n_1music_MainActivity_start<'local>(
-    env: jni::JNIEnv<'local>,
+    mut env: jni::EnvUnowned<'local>,
     _class: jni::objects::JClass<'local>,
     callback: jni::objects::JObject<'local>,
 ) {
-    let jvm = env.get_java_vm().unwrap();
-    let callback = env.new_global_ref(callback).unwrap();
-    ANDROID_TX
-        .send(MessageAndroidToRust::Start(jvm, callback))
-        .unwrap()
+    env.with_env(|env| -> jni::errors::Result<()> {
+        let jvm = env.get_java_vm()?;
+        let callback = env.new_global_ref(callback)?;
+        ANDROID_TX
+            .send(MessageAndroidToRust::Start(jvm, callback))
+            .unwrap();
+        Ok(())
+    }).resolve::<ThrowRuntimeExAndDefault>();
 }
 
 #[cfg(target_os = "android")]
 #[no_mangle]
 pub extern "system" fn Java_com_enn3developer_n_1music_MediaCallback_TogglePause<'local>(
+    mut env: jni::EnvUnowned<'local>,
     _class: jni::objects::JClass<'local>,
 ) {
-    ANDROID_TX
-        .send(MessageAndroidToRust::Callback(RunnerMessage::TogglePause))
-        .unwrap()
+    env.with_env(|_env| -> jni::errors::Result<()> {
+        ANDROID_TX
+            .send(MessageAndroidToRust::Callback(RunnerMessage::TogglePause))
+            .unwrap();
+        Ok(())
+    }).resolve::<ThrowRuntimeExAndDefault>();
+}
+
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub extern "system" fn Java_com_enn3developer_n_1music_MediaCallback_ToggleRepeat<'local>(
+    mut env: jni::EnvUnowned<'local>,
+    _class: jni::objects::JClass<'local>,
+) {
+    env.with_env(|_env| -> jni::errors::Result<()> {
+        ANDROID_TX
+            .send(MessageAndroidToRust::Callback(RunnerMessage::ToggleRepeat))
+            .unwrap();
+        Ok(())
+    }).resolve::<ThrowRuntimeExAndDefault>();
 }
 
 #[cfg(target_os = "android")]
 #[no_mangle]
 pub extern "system" fn Java_com_enn3developer_n_1music_MediaCallback_PlayNext<'local>(
+    mut env: jni::EnvUnowned<'local>,
     _class: jni::objects::JClass<'local>,
 ) {
-    ANDROID_TX
-        .send(MessageAndroidToRust::Callback(RunnerMessage::PlayNext))
-        .unwrap()
+    env.with_env(|_env| -> jni::errors::Result<()> {
+        ANDROID_TX
+            .send(MessageAndroidToRust::Callback(RunnerMessage::PlayNext))
+            .unwrap();
+        Ok(())
+    }).resolve::<ThrowRuntimeExAndDefault>();
 }
 
 #[cfg(target_os = "android")]
 #[no_mangle]
 pub extern "system" fn Java_com_enn3developer_n_1music_MediaCallback_PlayPrevious<'local>(
+    mut env: jni::EnvUnowned<'local>,
     _class: jni::objects::JClass<'local>,
 ) {
-    ANDROID_TX
-        .send(MessageAndroidToRust::Callback(RunnerMessage::PlayPrevious))
-        .unwrap()
+    env.with_env(|_env| -> jni::errors::Result<()> {
+        ANDROID_TX
+            .send(MessageAndroidToRust::Callback(RunnerMessage::PlayPrevious))
+            .unwrap();
+        Ok(())
+    }).resolve::<ThrowRuntimeExAndDefault>();
 }
 
 #[cfg(target_os = "android")]
 #[no_mangle]
 pub extern "system" fn Java_com_enn3developer_n_1music_MediaCallback_Seek<'local>(
+    mut env: jni::EnvUnowned<'local>,
     _class: jni::objects::JClass<'local>,
     seek: jni::sys::jdouble,
 ) {
-    ANDROID_TX
-        .send(MessageAndroidToRust::Callback(RunnerMessage::Seek(
-            RunnerSeek::Absolute(seek),
-        )))
-        .unwrap();
-    ANDROID_TX
-        .send(MessageAndroidToRust::Callback(RunnerMessage::Play))
-        .unwrap()
+    env.with_env(|_env| -> jni::errors::Result<()> {
+        ANDROID_TX
+            .send(MessageAndroidToRust::Callback(RunnerMessage::Seek(
+                RunnerSeek::Absolute(seek),
+            )))
+            .unwrap();
+        ANDROID_TX
+            .send(MessageAndroidToRust::Callback(RunnerMessage::Play))
+            .unwrap();
+        Ok(())
+    }).resolve::<ThrowRuntimeExAndDefault>();
 }

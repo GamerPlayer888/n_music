@@ -128,21 +128,21 @@ impl Runner {
                 }
             },
             RunnerMessage::ToggleRepeat => {
-                if !self.player.get_loop_status() {
-                    self.player.set_loop_status(LoopStatus::File);
+                if !self.player.is_looping() {
+                    self.player.set_loop(LoopStatus::File);
                 } else {
-                    self.player.set_loop_status(LoopStatus::Playlist);
+                    self.player.set_loop(LoopStatus::Playlist);
                 }
             }
         }
     }
 
-    pub fn playback(&self) -> bool {
-        !self.player.is_paused() && self.player.is_playing()
+    pub fn repeat(&self) -> bool {
+        self.player.is_looping()
     }
 
-    pub fn repeat(&self) -> bool {
-        self.player.get_loop_status()
+    pub fn playback(&self) -> bool {
+        !self.player.is_paused() && self.player.is_playing()
     }
 
     pub fn volume(&self) -> f64 {
@@ -187,10 +187,6 @@ impl Runner {
 
     pub fn set_path(&mut self, path: String) {
         self.player.set_path(path)
-    }
-
-    pub fn set_loop_status(&mut self, loop_status: LoopStatus) {
-        self.player.set_loop_status(loop_status)
     }
 
     pub async fn clear(&mut self) {

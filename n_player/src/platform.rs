@@ -6,6 +6,11 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+#[cfg(target_os = "android")]
+use jni::jni_sig;
+#[cfg(target_os = "android")]
+use jni::jni_str;
+
 #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
 fn open_link_desktop(link: String) {
     open::that(link).unwrap();
@@ -182,12 +187,12 @@ impl Platform for LinuxPlatform {
                         mpris_server::Property::Metadata(meta)
                     }
                     Property::Volume(volume) => mpris_server::Property::Volume(volume),
-                    Property::LoopStatus(loop_status) => {
+                    Property::Looping(loop_status) => {
                         let loop_status = match loop_status {
-                            n_audio::queue::LoopStatus::Playlist => {
+                            true => {
                                 mpris_server::LoopStatus::Playlist
                             }
-                            n_audio::queue::LoopStatus::File => mpris_server::LoopStatus::Track,
+                            false => mpris_server::LoopStatus::Track,
                         };
 
                         mpris_server::Property::LoopStatus(loop_status)
@@ -231,7 +236,7 @@ impl Platform for DesktopPlatform {
 pub struct AndroidPlatform {
     app: slint::android::AndroidApp,
     jvm: jni::JavaVM,
-    callback: jni::objects::GlobalRef,
+    callback: jni::objects::Global<jni::objects::JObject<'static>>,
     tx: Option<Sender<RunnerMessage>>,
 }
 
@@ -240,7 +245,7 @@ impl AndroidPlatform {
     pub fn new(
         app: slint::android::AndroidApp,
         jvm: jni::JavaVM,
-        callback: jni::objects::GlobalRef,
+        callback: jni::objects::Global<jni::objects::JObject<'static>>,
     ) -> Self {
         Self {
             app,
@@ -255,27 +260,29 @@ impl AndroidPlatform {
 #[async_trait]
 impl Platform for AndroidPlatform {
     fn set_clipboard_text(&mut self, text: String) {
-        let mut env = self.jvm.attach_current_thread().unwrap();
-        let java_string = env.new_string(text).unwrap();
-        env.call_method(
-            &self.callback,
-            "set_clipboard_text",
-            "(Ljava/lang/String;)V",
-            &[(&java_string).into()],
-        )
-        .unwrap();
+        self.jvm.attach_current_thread(|env| {
+            let java_string = env.new_string(text)?;
+            env.call_method(
+                &self.callback,
+                jni::jni_str!("set_clipboard_text"),
+                jni::jni_sig!("(Ljava/lang/String;)V"),
+                &[(&java_string).into()],
+            )?;
+            Ok::<_, jni::errors::Error>(())
+        }).unwrap();
     }
 
     async fn open_link(&self, link: String) {
-        let mut env = self.jvm.attach_current_thread().unwrap();
-        let java_string = env.new_string(link).unwrap();
-        env.call_method(
-            &self.callback,
-            "openLink",
-            "(Ljava/lang/String;)V",
-            &[(&java_string).into()],
-        )
-        .unwrap();
+        self.jvm.attach_current_thread(|env| {
+            let java_string = env.new_string(link)?;
+            env.call_method(
+                &self.callback,
+                jni::jni_str!("openLink"),
+                jni::jni_sig!("(Ljava/lang/String;)V"),
+                &[(&java_string).into()],
+            )?;
+            Ok::<_, jni::errors::Error>(())
+        }).unwrap();
     }
 
     async fn internal_dir(&self) -> PathBuf {
@@ -291,9 +298,16 @@ impl Platform for AndroidPlatform {
     }
 
     async fn ask_music_dir(&self) -> PathBuf {
-        let mut env = self.jvm.attach_current_thread().unwrap();
-        env.call_method(&self.callback, "askDirectory", "()V", &[])
-            .unwrap();
+        self.jvm.attach_current_thread(|env| {
+            env.call_method(
+                &self.callback,
+                jni_str!("askDirectory"),
+                jni_sig!("()V"),
+                &[]
+            )?;
+            Ok::<_, jni::errors::Error>(())
+        }).unwrap();
+
         while let Ok(message) = crate::ANDROID_TX.recv() {
             if let crate::MessageAndroidToRust::Directory(path) = message {
                 println!("got directory from user");
@@ -306,9 +320,15 @@ impl Platform for AndroidPlatform {
     }
 
     async fn ask_file(&self) -> Vec<PathBuf> {
-        let mut env = self.jvm.attach_current_thread().unwrap();
-        env.call_method(&self.callback, "askFile", "()V", &[])
-            .unwrap();
+        self.jvm.attach_current_thread(|env| {
+            env.call_method(
+                &self.callback,
+                jni_str!("askFile"),
+                jni_sig!("()V"),
+                &[]
+            )?;
+            Ok::<_, jni::errors::Error>(())
+        }).unwrap();
         while let Ok(message) = crate::ANDROID_TX.recv() {
             if let crate::MessageAndroidToRust::File(path) = message {
                 return vec![PathBuf::from(path)];
@@ -320,55 +340,71 @@ impl Platform for AndroidPlatform {
     }
 
     async fn add_runner(&mut self, runner: Arc<RwLock<Runner>>, tx: Sender<RunnerMessage>) {
-        let mut env = self.jvm.attach_current_thread().unwrap();
-        env.call_method(&self.callback, "createNotification", "()V", &[])
-            .unwrap();
+        self.jvm.attach_current_thread(|env| {
+            env.call_method(
+                &self.callback,
+                jni_str!("createNotification"),
+                jni_sig!("()V"),
+                &[]
+            )?;
+            Ok::<_, jni::errors::Error>(())
+        }).unwrap();
+
         self.tx = Some(tx);
     }
 
     async fn properties_changed<P: IntoIterator<Item = Property> + Send>(&self, properties: P) {
-        let mut env = self.jvm.attach_current_thread().unwrap();
-        for p in properties {
-            match p {
-                Property::Playing(playing) => {
-                    env.call_method(
-                        &self.callback,
-                        "changePlaybackStatus",
-                        "(Z)V",
-                        &[playing.into()],
-                    )
-                    .unwrap();
+        self.jvm.attach_current_thread(|env| {
+            for p in properties {
+                match p {
+                    Property::Playing(playing) => {
+                        env.call_method(
+                            &self.callback,
+                            jni_str!("changePlaybackStatus"),
+                            jni_sig!("(Z)V"),
+                            &[playing.into()],
+                        )?;
+                    }
+                    Property::Metadata(metadata) => {
+                        let title = env
+                            .new_string(metadata.title.unwrap_or(String::new()))?;
+                        let artist = env
+                            .new_string(metadata.artists.unwrap_or(vec![String::new()]).join(", "))?;
+                        let cover_path = env
+                            .new_string(metadata.image_path.unwrap_or(String::new()))?;
+                        env.call_method(
+                            &self.callback,
+                            jni_str!("changeNotification"),
+                            jni_sig!("(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;D)V"),
+                            &[
+                                (&title).into(),
+                                (&artist).into(),
+                                (&cover_path).into(),
+                                jni::JValue::Double(metadata.length),
+                            ],
+                        )?;
+                    }
+                    Property::PositionChanged(seek) => {
+                        env.call_method(
+                            &self.callback,
+                            jni_str!("changePlaybackSeek"),
+                            jni_sig!("(D)V"),
+                            &[jni::JValue::Double(seek)]
+                        )?;
+                    }
+                    Property::Looping(is_looping) => {
+                        env.call_method(
+                            &self.callback,
+                            jni_str!("changeLoopingStatus"),
+                            jni_sig!("(Z)V"),
+                            &[jni::JValue::Bool(is_looping)],
+                        )?;
+                    }
+                    _ => {}
                 }
-                Property::Metadata(metadata) => {
-                    let title = env
-                        .new_string(metadata.title.unwrap_or(String::new()))
-                        .unwrap();
-                    let artist = env
-                        .new_string(metadata.artists.unwrap_or(vec![String::new()]).join(", "))
-                        .unwrap();
-                    let cover_path = env
-                        .new_string(metadata.image_path.unwrap_or(String::new()))
-                        .unwrap();
-                    env.call_method(
-                        &self.callback,
-                        "changeNotification",
-                        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;D)V",
-                        &[
-                            (&title).into(),
-                            (&artist).into(),
-                            (&cover_path).into(),
-                            metadata.length.into(),
-                        ],
-                    )
-                    .unwrap();
-                }
-                Property::PositionChanged(seek) => {
-                    env.call_method(&self.callback, "changePlaybackSeek", "(D)V", &[seek.into()])
-                        .unwrap();
-                }
-                _ => {}
             }
-        }
+            Ok::<_, jni::errors::Error>(())
+        }).unwrap();
     }
 
     async fn tick(&mut self) {
