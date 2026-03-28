@@ -32,6 +32,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.R.drawable
 
 
 @OptIn(UnstableApi::class)
@@ -58,6 +59,8 @@ class MainActivity : NativeActivity() {
         const val ASK_DIRECTORY = 0
         const val ASK_FILE = 1
         const val REQUEST_PERMISSION_CODE = 1
+        const val CUSTOM_REPLAY_ON = "com.enn3developer.action.TOGGLE_REPEAT_ALL"
+        const val CUSTOM_REPLAY_OFF = "com.enn3developer.action.TOGGLE_REPEAT_NONE"
         const val ACTIONS = PlaybackState.ACTION_PLAY or PlaybackState.ACTION_PAUSE or PlaybackState.ACTION_SKIP_TO_NEXT or PlaybackState.ACTION_SKIP_TO_PREVIOUS or PlaybackState.ACTION_SEEK_TO
     }
 
@@ -136,6 +139,8 @@ class MainActivity : NativeActivity() {
         val bluetoothReceiver = IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY)
         applicationContext.registerReceiver(bluetoothBroadcastReceiver, bluetoothReceiver)
         playback = PlaybackState.Builder()
+            .addCustomAction(PlaybackState.CustomAction.Builder(CUSTOM_REPLAY_OFF,
+                "REPEAT OFF", drawable.media3_icon_repeat_off).build())
             .setActions(ACTIONS)
             .setActiveQueueItemId(ACTIONS)
         val channel = NotificationChannel(
@@ -153,6 +158,41 @@ class MainActivity : NativeActivity() {
             setSmallIcon(R.drawable.ic_launcher_monochrome)
             style = Notification.MediaStyle().setMediaSession(mediaSession?.sessionToken)
             setOngoing(true)
+        }
+    }
+
+    private fun changeLoopingStatus(status: Boolean) {
+        val pos = mediaSession?.controller?.playbackState?.position ?: 0L
+        val state = mediaSession?.controller?.playbackState?.state ?: PlaybackState.STATE_NONE
+
+        this.playback = PlaybackState.Builder()
+            .setActions(ACTIONS)
+
+        if (status) {
+            this.playback?.addCustomAction(
+                PlaybackState.CustomAction.Builder(
+                    CUSTOM_REPLAY_ON,
+                    "REPEAT ON",
+                    drawable.media3_icon_repeat_all
+                ).build()
+            )
+        } else {
+            this.playback?.addCustomAction(
+                PlaybackState.CustomAction.Builder(
+                    CUSTOM_REPLAY_OFF,
+                    "REPEAT OFF",
+                    drawable.media3_icon_repeat_off
+                ).build()
+            )
+        }
+
+        this.playback?.setState(state, pos, 1.0f)
+
+        mediaSession?.setPlaybackState(this.playback?.build())
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notification?.let {
+            notificationManager.notify(NOTIFICATION_ID, it.build())
         }
     }
 
