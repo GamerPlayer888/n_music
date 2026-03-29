@@ -1,0 +1,53 @@
+import { TrackData } from "../../data/track_data.slint";
+import { TopPanel } from "../components/top_panel.slint";
+import { ControlPanel } from "../components/control_panel.slint";
+import { Track } from "../components/track.slint";
+import { AppData } from "../../globals/app_data.slint";
+import { ScrollView } from "../components/scroll_view.slint";
+import {
+    MaterialPalette,
+    HorizontalDivider,
+    LargeAppBar,
+    ListView,
+} from "../../../material-1.0/material.slint";
+
+export component App {
+    callback settings();
+    Rectangle {
+    	background: MaterialPalette.background;
+
+		VerticalLayout {
+			spacing: 0px;
+
+			TopPanel {
+        			settings => {
+        				settings()
+        			}
+        		}
+
+			ScrollView {
+				viewport-width: parent.width - 20px;
+				viewport-y <=> AppData.viewport-y;
+
+				changed viewport-y => {
+					AppData.viewport-y = self.viewport-y;
+				}
+
+				VerticalLayout {
+					for track[i] in AppData.tracks: Track {
+						height: track.visible ? 84px : 0px;
+						track: track;
+						playing: AppData.playing == track.index;
+						clicked => {
+							if(AppData.playing != track.index || !AppData.playback){
+								AppData.clicked(track.index);
+							}
+						}
+					}
+				}
+			}
+
+			control_panel := ControlPanel {}
+		}
+	}
+}

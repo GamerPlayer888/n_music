@@ -1,0 +1,155 @@
+import { TrackData } from "../../data/track_data.slint";
+import { AppData } from "../../globals/app_data.slint";
+import { MediaButton } from "media_buttons.slint";
+import { Slider } from "slider.slint";
+import {
+    MaterialPalette,
+    MaterialTypography,
+    MaterialStyleMetrics,
+    IconButton,
+    FilledIconButton,
+    MaterialText,
+    MaterialAnimations
+} from "../../../material-1.0/material.slint";
+
+export component ControlPanel {
+    in property <TrackData> playing_track: AppData.tracks[AppData.playing];
+
+    vertical-stretch: 0;
+
+    Rectangle {
+        background: MaterialPalette.surface_container;
+        border-top-left-radius: 24px;
+        border-top-right-radius: 24px;
+
+        height: control-panel.preferred-height;
+
+        control-panel := VerticalLayout {
+         	padding-bottom: 16px;
+            padding: MaterialStyleMetrics.padding_8;
+            spacing: MaterialStyleMetrics.spacing_8;
+
+            info := HorizontalLayout {
+                spacing: MaterialStyleMetrics.spacing_8;
+                alignment: start;
+
+                MaterialText {
+                    text: playing_track.artist;
+                    style: MaterialTypography.body_medium;
+                    color: MaterialPalette.on_surface_variant;
+                    vertical-alignment: center;
+                }
+
+                MaterialText {
+                    text: "•";
+                    style: MaterialTypography.body_medium;
+                    color: MaterialPalette.on_surface_variant;
+                    vertical-alignment: center;
+                }
+
+                MaterialText {
+                    text: playing_track.title;
+                    style: MaterialTypography.title_medium;
+                    color: MaterialPalette.on_surface;
+                    vertical-alignment: center;
+                }
+            }
+
+            HorizontalLayout {
+                spacing: MaterialStyleMetrics.spacing_16;
+
+                Rectangle {
+                    width: 72px;
+                    height: 72px;
+                    border-radius: MaterialStyleMetrics.border_radius_8;
+                    clip: true;
+
+                    Image {
+                        width: 100%;
+                        height: 100%;
+                        source: playing_track.cover;
+                        image-fit: cover;
+                    }
+                }
+
+                VerticalLayout {
+                    spacing: MaterialStyleMetrics.spacing_8;
+
+                    HorizontalLayout {
+                        spacing: MaterialStyleMetrics.spacing_12;
+
+                        position := MaterialText {
+                            text: AppData.position_time;
+                            style: MaterialTypography.label_medium;
+                            color: MaterialPalette.on_surface_variant;
+                            vertical-alignment: center;
+                        }
+
+                        time_slider := Slider {
+							minimum: 0.0;
+							maximum: AppData.length > 1.0 ? AppData.length : 1.0;
+							value <=> AppData.time;
+
+							value_changed(value) => {
+								AppData.changing();
+							}
+
+							released(value) => {
+								AppData.seek(value);
+							}
+						}
+
+                        length := MaterialText {
+                            text: playing_track.time;
+                            style: MaterialTypography.label_medium;
+                            color: MaterialPalette.on_surface_variant;
+                            vertical-alignment: center;
+                        }
+                    }
+
+                    buttons := HorizontalLayout {
+						alignment: center;
+						spacing: MaterialStyleMetrics.spacing_8;
+
+					MediaButton {
+						icon: @image-url("../../../assets/icons/previous.svg");
+						bg-color: MaterialPalette.surface_container_highest;
+						icon-color: MaterialPalette.on_surface;
+						clicked => {
+							AppData.play_previous();
+							AppData.time = 0.0;
+						}
+					}
+
+
+					MediaButton {
+						icon: AppData.playback ? @image-url("../../../assets/icons/pause.svg") : @image-url("../../../assets/icons/play.svg");
+						bg-color: MaterialPalette.primary_container;
+						icon-color: MaterialPalette.on_primary_container;
+						clicked => {
+							AppData.toggle_pause();
+						}
+					}
+
+					MediaButton {
+						icon: @image-url("../../../assets/icons/next.svg");
+						bg-color: MaterialPalette.surface_container_highest;
+						icon-color: MaterialPalette.on_surface;
+						clicked => {
+							AppData.play_next();
+						}
+					}
+
+					MediaButton {
+						icon: AppData.repeat ? @image-url("../../../assets/icons/repeat_on.svg") : @image-url("../../../assets/icons/repeat_off.svg");
+						bg-color: AppData.repeat ? MaterialPalette.primary_container : MaterialPalette.surface_container_highest;
+						clicked => {
+							AppData.toggle_repeat();
+						}
+					}
+					}
+                }
+            }
+        }
+    }
+}

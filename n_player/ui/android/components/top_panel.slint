@@ -1,0 +1,60 @@
+import { Localization } from "../../globals/localization.slint";
+import { AppData } from "../../globals/app_data.slint";
+import { SearchBar } from "search_bar.slint";
+import {
+    MaterialPalette,
+    MaterialStyleMetrics,
+    TextField,
+    IconButton,
+    LinearProgressIndicator,
+    SmallAppBar, FilledIconButton
+} from "../../../material-1.0/material.slint";
+import { MediaButton } from "media_buttons.slint";
+
+export component TopPanel {
+    callback settings();
+
+    VerticalLayout {
+    	padding_top: 32px;
+    	padding: MaterialStyleMetrics.padding_10;
+        spacing: 10px;
+
+        HorizontalLayout {
+            height: MaterialStyleMetrics.size_56;
+            spacing: MaterialStyleMetrics.spacing_8;
+
+            search_field := SearchBar {
+                horizontal-stretch: 1;
+                placeholder-text: Localization.search;
+                leading_icon: @image-url("../../../assets/icons/search.svg");
+                text <=> AppData.search_text;
+
+                edited(value) => {
+                    AppData.searching(value);
+                }
+                accepted(value) => {
+                    AppData.searching(value);
+                    self.clear-focus();
+                }
+            }
+
+            IconButton {
+                icon: @image-url("../../../assets/icons/down.svg");
+                clicked => {
+                    AppData.scroll();
+                }
+            }
+
+            FilledIconButton {
+                icon: @image-url("../../../assets/icons/settings.svg");
+                clicked => {
+                    root.settings();
+                }
+            }
+        }
+
+        LinearProgressIndicator {
+            progress: AppData.progress;
+        }
+    }
+}

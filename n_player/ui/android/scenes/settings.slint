@@ -1,0 +1,147 @@
+import { ScrollView } from "../components/scroll_view.slint";
+import {
+    MediumAppBar, Switch,
+    FilledIconButton, TonalButton, TextButton, MaterialText, FilledButton,
+    MaterialTypography, MaterialPalette, MaterialStyleMetrics
+} from "../../../material-1.0/material.slint";
+
+import { ComboBox } from "../components/combo_box.slint";
+
+import { Setting } from "../components/setting.slint";
+import { Localization } from "../../globals/localization.slint";
+import { SettingsData } from "../../globals/settings_data.slint";
+import { AppData } from "../../globals/app_data.slint";
+
+export component Settings {
+    callback exit();
+
+     settings := Rectangle {
+        width: parent.width;
+        height: parent.height;
+        background: MaterialPalette.surface;
+		VerticalLayout {
+		padding: MaterialStyleMetrics.padding_10;
+        VerticalLayout {
+    		padding_top: 32px;
+			spacing: 10px;
+
+             HorizontalLayout {
+             	height: MaterialStyleMetrics.size_56;
+				spacing: MaterialStyleMetrics.spacing_8;
+				MaterialText {
+                	horizontal-stretch: 1;
+					horizontal-alignment: left;
+					vertical-alignment: center;
+					text: Localization.settings;
+					font-size: 24px;
+				}
+
+				HorizontalLayout {
+					alignment: end;
+					FilledIconButton {
+						icon: @image-url("../../../assets/icons/back.svg");
+						clicked => {
+							exit()
+						}
+					}
+				}
+			}
+		}
+		VerticalLayout {
+                VerticalLayout {
+                    padding_top: MaterialStyleMetrics.padding_8;
+                    padding_bottom: MaterialStyleMetrics.padding_24;
+                    spacing: MaterialStyleMetrics.spacing_8;
+
+                    Setting {
+                        text: Localization.theme;
+                        ComboBox {
+                        	width: 150px;
+                        	height: 50px;
+                            model: [Localization.theme_system, Localization.theme_light, Localization.theme_dark];
+                            current-index: SettingsData.theme;
+                            current-value: self.model[self.current-index];
+                            selected(value) => {
+                                SettingsData.change_theme(self.current-index);
+                            }
+                        }
+                    }
+
+                    if !AppData.android : Setting {
+                        text: Localization.window_size;
+                        Switch {
+                            checked: SettingsData.save_window_size;
+                            checked_state_changed(checked) => {
+                                SettingsData.save_window_size = checked;
+                                SettingsData.toggle_save_window_size(checked);
+                            }
+                        }
+                    }
+
+                    Setting {
+                        text: Localization.music_path;
+                        TonalButton {
+                            icon: @image-url("../../../assets/icons/folder.svg");
+                            clicked => {
+                                SettingsData.path();
+                            }
+                        }
+                    }
+
+                    Setting {
+                        text: Localization.rescan;
+                        TonalButton {
+                        	icon: @image-url("../../../assets/icons/shuffle.svg");
+                            clicked => {
+                                SettingsData.scan();
+                            }
+                        }
+                    }
+
+                    Setting {
+                        text: Localization.language;
+                        ComboBox {
+                        	width: 150px;
+                        	height: 50px;
+                            model: Localization.localizations;
+                            current-value: Localization.current_locale;
+                            selected(value) => {
+                                Localization.set_locale(value);
+                            }
+                        }
+                    }
+
+                    VerticalLayout {
+                        padding_top: MaterialStyleMetrics.padding_30;
+                        spacing: MaterialStyleMetrics.spacing_4;
+                        alignment: center;
+
+                        MaterialText {
+                            text: "N Music v" + AppData.version;
+                            style: MaterialTypography.label_medium;
+                            color: MaterialPalette.on_surface_variant;
+                            horizontal_alignment: center;
+                        }
+
+                        HorizontalLayout {
+                            alignment: center;
+                            TextButton {
+                                text: Localization.credits;
+                                clicked => {
+									AppData.open_link("https://github.com/Enn3Developer/n_music/graphs/contributors");
+								}
+                            }
+                        }
+
+                        MaterialText {
+                            text: Localization.license + ": GPL-3";
+                            style: MaterialTypography.label_small;
+                            color: MaterialPalette.outline;
+                            horizontal_alignment: center;
+                        }
+                    }
+                }
+        }
+    }
+}
+}
