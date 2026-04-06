@@ -9,9 +9,10 @@ members = [
 opt-level = 1
 
 [profile.release]
+strip = true
 lto = true
 codegen-units = 1
-opt-level = 3
+opt-level = "z"
 
 # The profile that 'cargo dist' will build with
 [profile.dist]
