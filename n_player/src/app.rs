@@ -60,8 +60,11 @@ pub async fn run_app<P: crate::platform::Platform + Send + 'static + Sync>(
     let p = platform.clone();
     p.write().await.add_runner(r.clone(), tx_t.clone()).await;
     let (tx_path, rx_path) = flume::unbounded();
+    let settings_path = settings.read().await.path.clone();
+    let check_cache = !settings_path.is_empty();
+
     tx_path
-        .send_async((settings.read().await.path.clone(), true))
+        .send_async((settings_path, check_cache))
         .await
         .unwrap();
     let (tx_tracks, rx_tracks) = flume::unbounded();
