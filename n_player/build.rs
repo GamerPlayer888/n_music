@@ -5,7 +5,22 @@ use std::path::Path;
 fn main() {
     println!("cargo::rerun-if-changed=ui/");
     println!("cargo:rerun-if-changed=assets/lang/");
-    slint_build::compile("ui/window.slint").expect("Slint build failed");
+
+    let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
+
+    if target_os == "android" {
+        let config = slint_build::CompilerConfiguration::new().with_library_paths(
+            std::collections::HashMap::from([(
+                "material".to_string(),
+                Path::new(&std::env::var_os("CARGO_MANIFEST_DIR").unwrap())
+                    .join("material-1.0/material.slint"),
+            )]),
+        );
+
+        slint_build::compile_with_config("ui/android/window.slint", config).unwrap();
+    } else {
+        slint_build::compile("ui/window.slint").expect("Slint build failed");
+    }
     let lang_dir = Path::new("assets").join("lang").read_dir().unwrap();
     let mut localizations = String::from("const LOCALIZATIONS: [(&str, &str); {LEN}] = [");
     let mut get_locale = String::from("pub fn get_locale(denominator: &str) -> Locale { serde_json::from_str(match denominator { ");
