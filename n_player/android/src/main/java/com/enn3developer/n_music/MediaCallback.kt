@@ -7,16 +7,24 @@ import androidx.media3.session.R
 import com.enn3developer.n_music.MainActivity.Companion.ACTIONS
 import com.enn3developer.n_music.MainActivity.Companion.CUSTOM_REPLAY_ON
 import com.enn3developer.n_music.MainActivity.Companion.CUSTOM_REPLAY_OFF
+import androidx.annotation.Keep
 
 class MediaCallback(
     private val mediaSession: MediaSession,
     private val activity: MainActivity
 ) : MediaSession.Callback() {
 
+    @Keep
     private external fun TogglePause()
+    @Keep
     private external fun PlayNext()
+    @Keep
     private external fun PlayPrevious()
+
+    @Keep
     private external fun Seek(seek: Double)
+
+    @Keep
     private external fun ToggleRepeat()
 
     override fun onPause() {

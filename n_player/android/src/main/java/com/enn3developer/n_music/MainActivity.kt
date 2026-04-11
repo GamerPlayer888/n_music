@@ -33,6 +33,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.R.drawable
+import androidx.annotation.Keep
 
 
 @OptIn(UnstableApi::class)
@@ -75,10 +76,13 @@ class MainActivity : NativeActivity() {
     private var notification: Notification.Builder? = null
 
     // Called when app is open first time
+    @Keep
     private external fun start(activity: MainActivity)
 
+    @Keep
     private external fun gotDirectory(directory: String)
 
+    @Keep
     private external fun gotFile(file: String)
 
     private val bluetoothBroadcastReceiver = object : BroadcastReceiver() {
@@ -93,6 +97,7 @@ class MainActivity : NativeActivity() {
     }
 
     @Suppress("unused")
+    @Keep
     private fun askDirectory() {
         println("asking directory")
         //Check if permission has been granted
@@ -104,6 +109,7 @@ class MainActivity : NativeActivity() {
     }
 
     @Suppress("unused")
+    @Keep
     private fun askFile() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
         }
@@ -111,6 +117,7 @@ class MainActivity : NativeActivity() {
     }
 
     @Suppress("unused")
+    @Keep
     private fun set_clipboard_text(text: String){
         val clipboard: ClipboardManager = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText(text, text)
@@ -118,6 +125,7 @@ class MainActivity : NativeActivity() {
     }
 
     @Suppress("unused")
+    @Keep
     private fun openLink(link: String) {
         val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(link))
         startActivity(browserIntent)
@@ -126,6 +134,7 @@ class MainActivity : NativeActivity() {
     @SuppressLint("RestrictedApi")
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @Suppress("unused")
+    @Keep
     private fun createNotification() {
         if (!checkPermissions()) {
             requestPermissions()
@@ -161,6 +170,7 @@ class MainActivity : NativeActivity() {
         }
     }
 
+    @Keep
     private fun changeLoopingStatus(status: Boolean) {
         val pos = mediaSession?.controller?.playbackState?.position ?: 0L
         val state = mediaSession?.controller?.playbackState?.state ?: PlaybackState.STATE_NONE
@@ -196,6 +206,7 @@ class MainActivity : NativeActivity() {
         }
     }
 
+    @Keep
     private fun changePlaybackStatus(status: Boolean) {
         val playbackState = mediaSession?.controller?.playbackState
         playbackState?.position?.let {
@@ -209,6 +220,7 @@ class MainActivity : NativeActivity() {
         mediaSession?.setPlaybackState(playback?.build())
     }
 
+    @Keep
     private fun changePlaybackSeek(pos: Double) {
         mediaSession?.controller?.playbackState?.state?.let {
             playback?.setState(
@@ -223,6 +235,7 @@ class MainActivity : NativeActivity() {
     @OptIn(UnstableApi::class)
     @SuppressLint("RestrictedApi")
     @Suppress("unused")
+    @Keep
     private fun changeNotification(
         title: String,
         artists: String,
