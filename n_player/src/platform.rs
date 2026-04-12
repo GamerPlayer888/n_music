@@ -350,7 +350,19 @@ impl Platform for AndroidPlatform {
             Ok::<_, jni::errors::Error>(())
         }).unwrap();
 
-        self.tx = Some(tx);
+        self.tx = Some(tx.clone());
+
+        tokio::spawn(async move {
+            while let Ok(message) = crate::ANDROID_TX.recv_async().await {
+                if let crate::MessageAndroidToRust::Callback(msg) = message {
+                    tx.send_async(msg)
+                        .await
+                        .expect("error sending callback command to runner");
+                } else {
+                    crate::ANDROID_TX.send_async(message).await.unwrap();
+                }
+            }
+        });
     }
 
     async fn properties_changed<P: IntoIterator<Item = Property> + Send>(&self, properties: P) {
@@ -405,19 +417,5 @@ impl Platform for AndroidPlatform {
             }
             Ok::<_, jni::errors::Error>(())
         }).unwrap();
-    }
-
-    async fn tick(&mut self) {
-        while let Ok(message) = crate::ANDROID_TX.try_recv() {
-            if let crate::MessageAndroidToRust::Callback(msg) = message {
-                if let Some(tx) = &self.tx {
-                    tx.send_async(msg)
-                        .await
-                        .expect("error sending callback command to runner");
-                }
-            } else {
-                crate::ANDROID_TX.send(message).unwrap();
-            }
-        }
     }
 }
