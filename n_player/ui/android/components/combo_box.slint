@@ -107,45 +107,50 @@ export component ComboBox {
         x: 0;
         width: root.width;
         close_policy: close_on_click_outside;
-        forward_focus: inner_text_field;
 
-        VerticalLayout {
-            alignment: start;
+        forward_focus: popup_focus_trap;
 
-            inner_text_field := TextField {
-                width: root.width;
-                trailing_icon: Icons.arrow_drop_up;
-                text: root.current_value;
-                label: root.label;
-                read_only: true;
+        popup_focus_trap := FocusScope {
+            width: 100%;
 
-                trailing_icon_clicked => {
-                    menu.close();
+            VerticalLayout {
+                alignment: start;
+
+                inner_text_field := TextField {
+                    width: root.width;
+                    trailing_icon: Icons.arrow_drop_up;
+                    text: root.current_value;
+                    label: root.label;
+                    read_only: true;
+
+                    trailing_icon_clicked => {
+                        menu.close();
+                    }
                 }
-            }
 
-            Rectangle {
-                width: 100%;
-                height: min(max(root.item_height, root.model.length * root.item_height), root.max_displayed_items * root.item_height) + (MaterialStyleMetrics.padding_8 * 2);
-
-                Elevation {
+                Rectangle {
                     width: 100%;
-                    height: 100%;
-                    level: 2;
-                    border_radius: MaterialStyleMetrics.border_radius_4;
-                    background: MaterialPalette.surface_container;
+                    height: min(max(root.item_height, root.model.length * root.item_height), root.max_displayed_items * root.item_height) + (MaterialStyleMetrics.padding_8 * 2);
 
-                    ScrollView {
-                        VerticalLayout {
-                            padding_top: MaterialStyleMetrics.padding_8;
-                            padding_bottom: self.padding_top;
+                    Elevation {
+                        width: 100%;
+                        height: 100%;
+                        level: 2;
+                        border_radius: MaterialStyleMetrics.border_radius_4;
+                        background: MaterialPalette.surface_container;
 
-                            for text[index] in root.model : ComboBoxItem {
-                                text: text;
-                                selected: index == root.current_index;
+                        ScrollView {
+                            VerticalLayout {
+                                padding_top: MaterialStyleMetrics.padding_8;
+                                padding_bottom: self.padding_top;
 
-                                clicked => {
-                                    root.update_selection(index);
+                                for text[index] in root.model : ComboBoxItem {
+                                    text: text;
+                                    selected: index == root.current_index;
+
+                                    clicked => {
+                                        root.update_selection(index);
+                                    }
                                 }
                             }
                         }
