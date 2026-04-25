@@ -71,16 +71,16 @@ impl Runner {
         println!("{message:?}");
         match message {
             RunnerMessage::PlayNext => {
-                self.player.end_current().await.unwrap();
+                let _ = self.player.end_current().await;
                 if let Err(err) = self.player.play_next(true).await {
                     eprintln!("error happened: {err}");
                 }
             }
             RunnerMessage::PlayPrevious => {
                 if self.current_time.position > 3.0 {
-                    self.player.seek_to(0, 0.0).await.unwrap();
+                    let _ = self.player.seek_to(0, 0.0).await;
                 } else {
-                    self.player.end_current().await.unwrap();
+                    let _ = self.player.end_current().await;
                     if let Err(err) = self.player.play_previous().await {
                         eprintln!("error happened: {err}");
                     }
@@ -88,9 +88,9 @@ impl Runner {
             }
             RunnerMessage::TogglePause => {
                 if self.player.is_paused() {
-                    self.player.unpause().await.unwrap();
+                    let _ = self.player.unpause().await;
                 } else {
-                    self.player.pause().await.unwrap();
+                    let _ = self.player.pause().await;
                 }
                 if !self.player.is_playing() {
                     if let Err(err) = self.player.play_next(true).await {
@@ -99,10 +99,10 @@ impl Runner {
                 }
             }
             RunnerMessage::Pause => {
-                self.player.pause().await.unwrap();
+                let _ = self.player.pause().await;
             }
             RunnerMessage::Play => {
-                self.player.unpause().await.unwrap();
+                let _ = self.player.unpause().await;
                 if !self.player.is_playing() {
                     if let Err(err) = self.player.play_next(true).await {
                         eprintln!("error happened: {err}");
@@ -113,7 +113,7 @@ impl Runner {
                 self.player.set_volume(volume as f32).await.unwrap();
             }
             RunnerMessage::PlayTrack(index) => {
-                self.player.end_current().await.unwrap();
+                let _ = self.player.end_current().await;
                 if let Err(err) = self.player.play_index(index).await {
                     eprintln!("error happened: {err}");
                 }
