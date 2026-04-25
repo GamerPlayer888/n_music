@@ -10,7 +10,7 @@ use n_audio::queue::QueuePlayer;
 use n_audio::remove_ext;
 use pollster::FutureExt;
 use slint::{ComponentHandle, Model, VecModel, Weak};
-use std::collections::HashMap;
+use std::mem;
 use std::ops::DerefMut;
 use std::sync::Arc;
 use std::time::Duration;
@@ -80,6 +80,9 @@ pub async fn run_app<P: crate::platform::Platform + Send + 'static + Sync>(
     let (tx_searching, rx_searching) = flume::unbounded();
     let (tx_changing, rx_changing) = flume::unbounded();
     let (tx_wake, rx_wake) = flume::unbounded::<()>();
+    let (tx_vis, rx_vis) = flume::unbounded::<bool>();
+    let p = platform.clone();
+    p.write().await.set_visibility_sender(tx_vis).await;
 
     setup_data(
         settings.clone(),
@@ -107,6 +110,7 @@ pub async fn run_app<P: crate::platform::Platform + Send + 'static + Sync>(
         rx_searching,
         rx_l,
         rx_wake.clone(),
+        rx_vis,
     ));
 
     tokio::task::block_in_place(|| main_window.run().unwrap());
@@ -287,16 +291,25 @@ async fn updater_task<P: crate::platform::Platform + Send + 'static + Sync>(
         let mut ui_needs_update = false;
 
         tokio::select! {
-            // If playback it's playing, then every 250ms update it
+            // If ui it's visible and playback it's playing, then every 250ms update it
             _ = interval.tick(), if is_playing => {
                 ui_needs_update = true;
             }
 
+            // Event A: UI it's visible
+            Ok(visible) = rx_vis.recv_async() => {
+                is_app_visible = visible;
+                if visible {
+                    ui_needs_update = true;
+                }
+            }
+
+            // Event B: UI or media control it's interacted
             Ok(()) = rx_wake.recv_async() => {
                 ui_needs_update = true;
             }
 
-            // Event A: New tracks loaded from a directory scan
+            // Event C: New tracks loaded from a directory scan
             Ok(new_tracks) = rx_tracks.recv_async() => {
                 changes.push(Changes::Tracks(new_tracks));
                 new_loaded = true;
@@ -305,7 +318,7 @@ async fn updater_task<P: crate::platform::Platform + Send + 'static + Sync>(
                 ui_needs_update = true;
             }
 
-            // Event B: Typing in the search bar
+            // Event D: Typing in the search bar
             Ok(search_string) = rx_searching.recv_async() => {
                 if searching.is_empty() {
                     save_y = true;
@@ -315,13 +328,13 @@ async fn updater_task<P: crate::platform::Platform + Send + 'static + Sync>(
                 ui_needs_update = true;
             }
 
-            // Event C: Dragging the playback slider
+            // Event E: Dragging the playback slider
             Ok(()) = rx_changing.recv_async() => {
                 change_time = false;
                 ui_needs_update = true;
             }
 
-            // Event D: Metadata loader
+            // Event F: Metadata loader
             Ok(track_data) = rx_l.recv_async() => {
                 let mut process_track = |data: Option<(usize, FileTrack)>| {
                     if let Some((index, file_track)) = data {
@@ -356,6 +369,10 @@ async fn updater_task<P: crate::platform::Platform + Send + 'static + Sync>(
                 }
                 ui_needs_update = true;
             }
+        }
+
+        if !is_app_visible {
+            continue;
         }
 
         if !ui_needs_update {

@@ -85,6 +85,11 @@ pub trait Platform {
         Self: Sized,
     {
     }
+
+    async fn set_visibility_sender(&mut self, _tx: Sender<bool>)
+    where
+        Self: Sized,
+    {}
 }
 
 #[cfg(target_os = "linux")]
@@ -417,5 +422,20 @@ impl Platform for AndroidPlatform {
             }
             Ok::<_, jni::errors::Error>(())
         }).unwrap();
+    }
+
+    async fn set_visibility_sender(&mut self, tx_vis: Sender<bool>) {
+        tokio::spawn(async move {
+            while let Ok(message) = crate::ANDROID_TX.recv_async().await {
+                match message {
+                    crate::MessageAndroidToRust::Visibility(is_visible) => {
+                        let _ = tx_vis.send_async(is_visible).await;
+                    }
+                    other => {
+                        crate::ANDROID_TX.send_async(other).await.unwrap();
+                    }
+                }
+            }
+        });
     }
 }

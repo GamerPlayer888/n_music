@@ -131,6 +131,21 @@ class MainActivity : NativeActivity() {
         startActivity(browserIntent)
     }
 
+    @Suppress("unused")
+    private external fun onVisibilityChanged(isVisible: Boolean)
+
+    @Suppress("unused")
+    override fun onStart() {
+        super.onStart()
+        onVisibilityChanged(true)
+    }
+
+    @Suppress("unused")
+    override fun onStop() {
+        super.onStop()
+        onVisibilityChanged(false)
+    }
+
     @SuppressLint("RestrictedApi")
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     @Suppress("unused")

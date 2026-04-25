@@ -80,6 +80,7 @@ pub enum MessageAndroidToRust {
     Directory(String),
     File(String),
     Start(jni::JavaVM, jni::objects::Global<jni::objects::JObject<'static>>),
+    Visibility(bool),
 }
 #[cfg(target_os = "android")]
 pub enum MessageRustToAndroid {
@@ -459,6 +460,21 @@ pub extern "system" fn Java_com_enn3developer_n_1music_MediaCallback_Seek<'local
             .unwrap();
         ANDROID_TX
             .send(MessageAndroidToRust::Callback(RunnerMessage::Play))
+            .unwrap();
+        Ok(())
+    }).resolve::<ThrowRuntimeExAndDefault>();
+}
+
+#[cfg(target_os = "android")]
+#[no_mangle]
+pub extern "system" fn Java_com_enn3developer_n_1music_MainActivity_onVisibilityChanged<'local>(
+    mut env: jni::EnvUnowned<'local>,
+    _class: jni::objects::JClass<'local>,
+    is_visible: jni::sys::jboolean,
+) {
+    env.with_env(|_env| -> jni::errors::Result<()> {
+        crate::ANDROID_TX
+            .send(crate::MessageAndroidToRust::Visibility(is_visible != false))
             .unwrap();
         Ok(())
     }).resolve::<ThrowRuntimeExAndDefault>();
