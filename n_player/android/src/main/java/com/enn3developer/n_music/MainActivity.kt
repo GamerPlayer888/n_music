@@ -20,7 +20,6 @@ import android.media.AudioManager
 import android.media.MediaMetadata
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -34,6 +33,7 @@ import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.R.drawable
 import androidx.annotation.Keep
+import androidx.core.net.toUri
 
 
 @OptIn(UnstableApi::class)
@@ -127,7 +127,7 @@ class MainActivity : NativeActivity() {
     @Suppress("unused")
     @Keep
     private fun openLink(link: String) {
-        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(link))
+        val browserIntent = Intent(Intent.ACTION_VIEW, link.toUri())
         startActivity(browserIntent)
     }
 
@@ -168,6 +168,10 @@ class MainActivity : NativeActivity() {
             style = Notification.MediaStyle().setMediaSession(mediaSession?.sessionToken)
             setOngoing(true)
         }
+        val builtNotification = notification?.build()
+        PlaybackService.currentNotification = builtNotification
+        val serviceIntent = Intent(applicationContext, PlaybackService::class.java)
+        applicationContext.startForegroundService(serviceIntent)
     }
 
     @Keep
@@ -200,7 +204,7 @@ class MainActivity : NativeActivity() {
 
         mediaSession?.setPlaybackState(this.playback?.build())
 
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notification?.let {
             notificationManager.notify(NOTIFICATION_ID, it.build())
         }
@@ -282,7 +286,11 @@ class MainActivity : NativeActivity() {
                 setLargeIcon(cover)
             }
         }
-        with(getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager) {
+
+        val builtNotification = notification?.build()
+        PlaybackService.currentNotification = builtNotification
+
+        with(getSystemService(NOTIFICATION_SERVICE) as NotificationManager) {
             if (ActivityCompat.checkSelfPermission(
                     applicationContext,
                     POST_NOTIFICATIONS
@@ -290,7 +298,7 @@ class MainActivity : NativeActivity() {
             ) {
                 return@with
             }
-            notify(NOTIFICATION_ID, notification?.build())
+            notify(NOTIFICATION_ID, builtNotification)
         }
     }
 
@@ -301,8 +309,12 @@ class MainActivity : NativeActivity() {
 
     override fun onDestroy() {
         val notificationManager =
-            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(NOTIFICATION_ID)
+
+        val serviceIntent = Intent(applicationContext, PlaybackService::class.java)
+        applicationContext.stopService(serviceIntent)
+
         super.onDestroy()
     }
 
