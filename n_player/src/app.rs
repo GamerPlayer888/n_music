@@ -10,7 +10,7 @@ use n_audio::queue::QueuePlayer;
 use n_audio::remove_ext;
 use pollster::FutureExt;
 use slint::{ComponentHandle, Model, VecModel, Weak};
-use std::mem;
+use std::collections::HashMap;
 use std::ops::DerefMut;
 use std::sync::Arc;
 use std::time::Duration;
@@ -568,30 +568,32 @@ async fn loader<P: crate::platform::Platform + Send + 'static>(
                 .await;
             let is_cached = check_timestamp && !file_tracks.is_empty() && check_cache;
             println!("check timestamp: {check_timestamp}; is cached: {is_cached}");
-
-            let mut tracks = vec![];
+            let mut cached_map = HashMap::with_capacity(file_tracks.len());
+            if is_cached {
+                for ft in file_tracks.into_iter() {
+                    cached_map.insert(ft.path.clone(), ft);
+                }
+            }
+            let mut tracks = Vec::with_capacity(len);
             for i in 0..len {
                 let track_path = runner.read().await.get_path_for_file(i).await.unwrap();
+                let track_without_ext = remove_ext(&track_path);
                 if is_cached {
-                    let track_without_ext = remove_ext(track_path);
-                    if let Some(file_track) = file_tracks
-                        .iter()
-                        .find(|file_track| file_track.path == track_without_ext)
-                    {
+                    if let Some(file_track) = cached_map.get(&track_without_ext) {
                         let mut track: TrackData = file_track.clone().into();
                         track.index = i as i32;
-                        tracks.push(track)
+                        tracks.push(track);
+                        continue;
                     }
-                } else {
-                    tracks.push(TrackData {
-                        artist: Default::default(),
-                        cover: Default::default(),
-                        time: Default::default(),
-                        title: remove_ext(track_path).into(),
-                        index: i as i32,
-                        visible: true,
-                    });
                 }
+                tracks.push(TrackData {
+                    artist: Default::default(),
+                    cover: Default::default(),
+                    time: Default::default(),
+                    title: track_without_ext.into(),
+                    index: i as i32,
+                    visible: true,
+                });
             }
             tracks.shrink_to_fit();
             tx_tracks.send_async(tracks).await.unwrap();
