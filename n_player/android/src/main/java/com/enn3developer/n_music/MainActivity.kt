@@ -189,7 +189,9 @@ class MainActivity : NativeActivity() {
             requestPermissions()
         }
         val TAG = "PlaybackService"
-        mediaSession = MediaSession(applicationContext, TAG)
+        mediaSession = MediaSession(applicationContext, TAG).apply {
+            isActive = true;
+        }
         val handler = Handler(Looper.getMainLooper())
         handler.post {
             mediaSession?.setCallback(MediaCallback(mediaSession!!, this))
@@ -400,16 +402,17 @@ class MainActivity : NativeActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            REQUEST_PERMISSION_CODE -> if (grantResults.isNotEmpty()) {
-                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(applicationContext, "Permission granted", Toast.LENGTH_SHORT)
-                        .show()
-                    askDirectoryWithPermission()
-                } else {
-                    Toast.makeText(applicationContext, "Permission denied", Toast.LENGTH_SHORT)
-                        .show()
-                }
+
+        if (requestCode == REQUEST_PERMISSION_CODE) {
+            if (grantResults.isEmpty()) return;
+
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                 Toast.makeText(applicationContext, "Permission granted", Toast.LENGTH_SHORT)
+                     .show()
+                 askDirectoryWithPermission()
+			} else {
+                Toast.makeText(applicationContext, "Oops, relaunch app please", Toast.LENGTH_LONG)
+                    .show()
             }
         }
     }

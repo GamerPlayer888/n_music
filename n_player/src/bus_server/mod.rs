@@ -42,7 +42,6 @@ pub async fn run<P: Platform + Send + Sync>(
     let mut volume = 1.0;
     let mut index = runner.read().await.index();
     let mut time = TrackTime::default();
-    let path = runner.read().await.path();
     let mut repeat = false;
     
     loop {
@@ -77,7 +76,7 @@ pub async fn run<P: Platform + Send + Sync>(
             };
 
             let mut path_buf = PathBuf::new();
-            path_buf.push(&path);
+            path_buf.push(&guard.path());
             path_buf.push(track_name.as_ref());
             let track = MusicTrack::new(path_buf.to_str().unwrap())
                 .expect("can't get track for currently playing song");
