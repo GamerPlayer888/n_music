@@ -122,9 +122,12 @@ impl Player {
 
         if let Some(rx_t) = &self.rx_t {
             while let Ok(message) = rx_t.try_recv() {
-                if let Message::Time(time) = message {
-                    last = Some(time);
+                match message {
+                    Message::Time(time) => { last = Some(time) }
+                    Message::Pause => self.is_paused = true,
+                    _ => {}
                 }
+
             }
         }
 
@@ -333,8 +336,12 @@ impl Player {
                             }
                         }
 
-                        if let Some(audio_output) = &mut audio_output {
-                            audio_output.write(decoded, volume).unwrap()
+                        if let Some(out) = &mut audio_output {
+                            if out.write(decoded, volume).is_err() {
+                                audio_output = None;
+                                is_paused = true;
+                                let _ = tx_t.send(Message::Pause);
+                            }
                         }
                     }
                     Err(symphonia::core::errors::Error::DecodeError(err)) => {

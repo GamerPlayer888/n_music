@@ -94,7 +94,12 @@ class MainActivity : NativeActivity() {
 	private external fun onVisibilityChanged(isVisible: Boolean)
 
     private val bluetoothBroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(p0: Context?, p1: Intent?) {}
+        override fun onReceive(p0: Context?, p1: Intent?) {
+        	if(intent?.action == AudioManager.ACTION_AUDIO_BECOMING_NOISY
+                && mediaSession?.controller?.playbackState?.state == PlaybackState.STATE_PLAYING) {
+                mediaSession?.controller?.transportControls?.pause()
+        	}
+        }
     }
 
     private fun askDirectoryWithPermission() {
@@ -349,7 +354,9 @@ class MainActivity : NativeActivity() {
             ) {
                 return@with
             }
-            notify(NOTIFICATION_ID, builtNotification)
+            builtNotification?.let {
+                notify(NOTIFICATION_ID, it)
+            }
         }
     }
 

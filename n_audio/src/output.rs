@@ -169,8 +169,16 @@ impl<T: AudioOutputSample> AudioOutput for CpalAudioOutputImpl<T> {
             *sample = sample.mul_amp(volume.to_sample());
         }
 
-        while let Some(written) = self.ring_buf_producer.write_blocking(samples.as_slice()) {
-            samples = samples[written..].to_vec();
+        while !samples.is_empty() {
+            match self.ring_buf_producer.write_blocking_timeout(samples.as_slice(), std::time::Duration::from_millis(250)) {
+                Ok(Some(written)) => {
+                    samples = samples[written..].to_vec();
+                }
+                Ok(None) => break,
+                Err(_) => {
+                    return Err(AudioOutputError::StreamClosedError);
+                }
+            }
         }
 
         Ok(())
