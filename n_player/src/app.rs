@@ -426,6 +426,8 @@ async fn updater_task<P: crate::platform::Platform + Send + 'static + Sync>(
                         progress as f32
                     };
                     app_data.set_progress(progress);
+                } else { // Assume loader already finished
+                    app_data.set_progress(0.0);
                 }
 
                 for change in c {
@@ -479,7 +481,7 @@ async fn updater_task<P: crate::platform::Platform + Send + 'static + Sync>(
                     if height > app_data.get_viewport_y() {
                         app_data.set_viewport_y(0.0);
                     }
-                    if search.is_empty() {
+                    if updated_search && search.is_empty() {
                         app_data.set_viewport_y(app_data.get_saved_y());
                     }
                 }
