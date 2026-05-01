@@ -79,17 +79,19 @@ pub trait Platform {
         Self: Sized,
     {
     }
-    /// Allows the platform to do operations once in a while
-    async fn tick(&mut self)
-    where
-        Self: Sized,
-    {
-    }
 
+    /// Allows the platform to do operations once it's visible on screen
     async fn set_visibility_sender(&mut self, _tx: Sender<bool>)
     where
         Self: Sized,
     {}
+
+    /// Allows the platform to set system theme
+    async fn set_theme(&self, _theme: crate::Theme)
+    where
+        Self: Sized,
+    {
+    }
 }
 
 #[cfg(target_os = "linux")]
@@ -260,7 +262,6 @@ impl AndroidPlatform {
         }
     }
 }
-
 #[cfg(target_os = "android")]
 #[async_trait]
 impl Platform for AndroidPlatform {
@@ -437,5 +438,17 @@ impl Platform for AndroidPlatform {
                 }
             }
         });
+    }
+
+    async fn set_theme(&self, theme: crate::Theme) {
+        self.jvm.attach_current_thread(|env| {
+            env.call_method(
+                &self.callback,
+                jni_str!("set_theme"),
+                jni_sig!("(I)V"),
+                &[jni::JValue::Int(theme.into())],
+            )?;
+            Ok::<_, jni::errors::Error>(())
+        }).unwrap();
     }
 }

@@ -34,6 +34,9 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.R.drawable
 import androidx.annotation.Keep
 import androidx.core.net.toUri
+import android.graphics.Color
+import android.content.res.Configuration
+import androidx.core.view.WindowCompat
 
 
 @OptIn(UnstableApi::class)
@@ -65,6 +68,8 @@ class MainActivity : NativeActivity() {
         const val ACTIONS = PlaybackState.ACTION_PLAY or PlaybackState.ACTION_PAUSE or PlaybackState.ACTION_SKIP_TO_NEXT or PlaybackState.ACTION_SKIP_TO_PREVIOUS or PlaybackState.ACTION_SEEK_TO
     }
 
+    private var theme: Int = 0 // App theme: 0 = System, 1 = Light, 2 = Dark
+
     @SuppressLint("RestrictedApi")
     // It's the playback in the notification
     public var playback: PlaybackState.Builder? = null
@@ -85,9 +90,11 @@ class MainActivity : NativeActivity() {
     @Keep
     private external fun gotFile(file: String)
 
+	@Keep
+	private external fun onVisibilityChanged(isVisible: Boolean)
+
     private val bluetoothBroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(p0: Context?, p1: Intent?) {
-        }
+        override fun onReceive(p0: Context?, p1: Intent?) {}
     }
 
     private fun askDirectoryWithPermission() {
@@ -95,6 +102,13 @@ class MainActivity : NativeActivity() {
         }
         startActivityForResult(intent, ASK_DIRECTORY)
     }
+
+	@Suppress("unused")
+	@Keep
+    private fun set_theme(value: Int) {
+		theme = value
+		updateStatusBarAppearance()
+	}
 
     @Suppress("unused")
     @Keep
@@ -131,16 +145,36 @@ class MainActivity : NativeActivity() {
         startActivity(browserIntent)
     }
 
-    @Suppress("unused")
-    private external fun onVisibilityChanged(isVisible: Boolean)
+    private fun updateStatusBarAppearance() {
+            runOnUiThread {
+                val window = this.window
+                window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
 
-    @Suppress("unused")
+                val isLight = when (theme) {
+                    1 -> true
+                    2 -> false
+                    else -> {
+                        val currentNightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+                        currentNightMode == Configuration.UI_MODE_NIGHT_NO
+                    }
+                }
+
+                window.statusBarColor = if (isLight) Color.WHITE else Color.BLACK
+
+                WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = isLight
+            }
+        }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+		super.onConfigurationChanged(newConfig)
+		updateStatusBarAppearance()
+	}
+
     override fun onStart() {
         super.onStart()
         onVisibilityChanged(true)
     }
 
-    @Suppress("unused")
     override fun onStop() {
         super.onStop()
         onVisibilityChanged(false)

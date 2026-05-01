@@ -129,7 +129,7 @@ pub async fn run_app<P: crate::platform::Platform + Send + 'static + Sync>(
     settings.read().await.save(platform.read().await).await;
 }
 
-async fn setup_data<P: crate::platform::Platform + Send + 'static>(
+async fn setup_data<P: crate::platform::Platform + Send + 'static + Sync>(
     settings: Settings,
     platform: Platform<P>,
     main_window: MainWindow,
@@ -159,6 +159,8 @@ async fn setup_data<P: crate::platform::Platform + Send + 'static>(
         settings_data.set_height(settings.window_size.height as f32);
         settings_data.set_save_window_size(settings.save_window_size);
         settings_data.set_current_path(settings.path.clone().into());
+
+        platform.read().await.set_theme(settings.theme).await;
     }
 
     let p = platform.clone();
@@ -198,6 +200,7 @@ async fn setup_data<P: crate::platform::Platform + Send + 'static>(
             let p = p.clone();
             slint::spawn_local(async move {
                 s.write().await.theme = theme;
+                p.read().await.set_theme(theme).await;
                 s.read().await.save(p.read().await).await;
             })
             .unwrap();
