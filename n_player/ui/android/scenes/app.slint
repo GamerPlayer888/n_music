@@ -26,11 +26,21 @@ export component App {
         		}
 
 			ScrollView {
+				property <length> sync-y: AppData.viewport-y;
 				viewport-width: parent.width - 20px;
 				viewport-y <=> AppData.viewport-y;
 
+
+				changed sync-y => {
+					if (self.viewport-y != AppData.viewport-y) {
+						self.viewport-y = AppData.viewport-y;
+					}
+				}
+
 				changed viewport-y => {
-					AppData.viewport-y = self.viewport-y;
+					if (AppData.viewport-y != self.viewport-y) {
+						AppData.viewport-y = self.viewport-y;
+					}
 				}
 
 				VerticalLayout {
