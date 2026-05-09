@@ -444,7 +444,6 @@ async fn updater_task<P: crate::platform::Platform + Send + 'static + Sync>(
                 let maybe_search = app_data.get_search_text().to_string();
 
                 if maybe_search.is_empty() && maybe_search != search {
-                    updated_search = true;
                     search = maybe_search;
                 }
 
@@ -477,12 +476,14 @@ async fn updater_task<P: crate::platform::Platform + Send + 'static + Sync>(
                         }
                         tracks.set_row_data(index, track);
                     }
-                    let height = (counter * -84) as f32;
-                    if height > app_data.get_viewport_y() {
-                        app_data.set_viewport_y(0.0);
-                    }
-                    if updated_search && search.is_empty() {
-                        app_data.set_viewport_y(app_data.get_saved_y());
+                    if updated_search {
+                        let height = (counter * -84) as f32;
+                        if height > app_data.get_viewport_y() {
+                            app_data.set_viewport_y(0.0);
+                        }
+                        if search.is_empty() {
+                            app_data.set_viewport_y(app_data.get_saved_y());
+                        }
                     }
                 }
             })
