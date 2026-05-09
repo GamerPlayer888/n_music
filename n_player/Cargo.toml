@@ -48,7 +48,7 @@ mpris-server = "0.9"
 [target.'cfg(target_os = "android")'.dependencies.slint]
 version = "1.15"
 default-features = false
-features = ["backend-android-activity-06"]
+features = ["backend-android-activity-06", "unstable-fontique-08"]
 
 [target.'cfg(target_os = "android")'.dependencies]
 ndk-context = "0.1"
