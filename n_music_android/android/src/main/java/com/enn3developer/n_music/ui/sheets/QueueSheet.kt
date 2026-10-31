@@ -300,22 +300,38 @@ fun QueuePanel(
     val queued = upcoming.filter { it.queued }
     val shape = RoundedCornerShape(28.dp)
     Column(
-        modifier
-            .clip(shape)
-            .background(colors.surfaceLow, shape)
-            .semantics {
-                paneTitle = title
-                isTraversalGroup = true
-            }
+        modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        QueueHeader(title, queued, upcoming.size, shuffle, loop, origin, actions, panel = true)
         Box(
             Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(colors.outlineVariant)
+                .padding(top = 10.dp)
+                .size(32.dp, 4.dp)
+                .background(colors.onSurfaceVariant.copy(alpha = 0.45f), RoundedCornerShape(2.dp))
+                .semantics {
+                    contentDescription = title
+                }
         )
-        QueueList(entries, current, playing, actions, Modifier.weight(1f), dense = true)
+        Column(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .clip(shape)
+                .background(colors.surfaceLow, shape)
+                .semantics {
+                    paneTitle = title
+                    isTraversalGroup = true
+                }
+        ) {
+            QueueHeader(title, queued, upcoming.size, shuffle, loop, origin, actions, panel = true)
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(colors.outlineVariant)
+            )
+            QueueList(entries, current, playing, actions, Modifier.weight(1f), dense = true)
+        }
     }
 }
 

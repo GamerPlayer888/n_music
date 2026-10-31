@@ -865,7 +865,7 @@ internal fun UpNextContent(next: TrackRow?, skip: () -> Int, modifier: Modifier 
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(stringResource(R.string.up_next), style = text(13, FontWeight.Bold), color = colors.primary)
-            val muted = colors.onSurfaceVariant
+            val onSurfaceVariant = colors.onSurfaceVariant
             val shift = with(LocalDensity.current) { 8.dp.roundToPx() }
             AnimatedContent(
                 targetState = next,
@@ -877,13 +877,13 @@ internal fun UpNextContent(next: TrackRow?, skip: () -> Int, modifier: Modifier 
                 Text(
                     if (shown == null) {
                         buildAnnotatedString {
-                            withStyle(SpanStyle(color = muted)) { append(stringResource(R.string.queue_end)) }
+                            withStyle(SpanStyle(color = onSurfaceVariant)) { append(stringResource(R.string.queue_end)) }
                         }
                     } else {
                         val artist = shown.artist.ifEmpty { stringResource(R.string.unknown_artist) }
                         buildAnnotatedString {
                             append(shown.title)
-                            withStyle(SpanStyle(color = muted)) { append(" · $artist") }
+                            withStyle(SpanStyle(color = onSurfaceVariant)) { append(" · $artist") }
                         }
                     },
                     style = text(14),
@@ -892,7 +892,6 @@ internal fun UpNextContent(next: TrackRow?, skip: () -> Int, modifier: Modifier 
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            NIcon(R.drawable.ic_expand, size = 20.dp, tint = muted)
         }
         Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
     }

@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -122,6 +123,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInRoot
+import com.enn3developer.n_music.ui.components.tappable
 
 /** How dark the scrim over the app gets behind the open player. */
 private const val SCRIM = 0.5f
@@ -526,6 +528,7 @@ fun PlayerOverlay(
         animationSpec = NMotion.spatialDefault(PRECISION),
     )
     val queueDrag = Modifier.anchoredDraggable(queue, Orientation.Vertical, flingBehavior = queueFling)
+    val topMargin = with(density) { WindowInsets.statusBars.getTop(this) + 48.dp.toPx() }
 
     var overlayPos by remember { mutableStateOf(Offset.Zero) }
     var upNextInRoot by remember { mutableStateOf(Rect.Zero) }
@@ -534,7 +537,7 @@ fun PlayerOverlay(
         if (height > 0f && upNextInRoot != Rect.Zero) {
             queue.updateAnchors(
                 DraggableAnchors {
-                    QueueState.Open at 0f
+                    QueueState.Open at topMargin
                     QueueState.Closed at upNext.top
                 },
                 queue.targetValue,
@@ -775,6 +778,7 @@ fun PlayerOverlay(
                     .fillMaxSize()
                     .graphicsLayer { alpha = 0.4f * queue.progress(QueueState.Closed, QueueState.Open) }
                     .background(Color.Black)
+                    .tappable({ scope.launch { queue.animateTo(QueueState.Closed) } })
             )
             QueuePanel(
                 Modifier
@@ -791,11 +795,12 @@ fun PlayerOverlay(
                                 right = lerp(upNext.right, size.width, p),
                                 bottom = lerp(upNext.bottom, size.height + off, p) - off,
                             ),
-                            radius = lerp(upNextRadius, 0f, p),
+                            radius = upNextRadius,
                         )
                     }
                     .background(colors.surfaceLow)
                     .then(queueDrag)
+                    .tappable({ scope.launch { queue.animateTo(QueueState.Closed) } })
                     .nestedScroll(queueScroll),
                 progress = queueP,
                 header = { UpNextContent(ui.next, skip) },
